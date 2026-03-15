@@ -1,7 +1,7 @@
-from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional, Dict
+from typing import List, Optional
 import uuid
 import datetime
 import asyncio
@@ -10,6 +10,10 @@ import asyncio
 # Note: In a real scenario, we'd use core.pipeline.orchestrator.ScrapePipeline
 # Here we'll mock the data for now to ensure the frontend "runs" immediately 
 # while still providing a scaffold for real integration.
+
+import httpx
+from sqlalchemy.ext.asyncio import create_async_engine
+from core.config import settings
 
 app = FastAPI(title="bi-scraper API", version="0.1.0")
 
@@ -64,7 +68,44 @@ class JobCreate(BaseModel):
 
 @app.get("/api/v1/health")
 async def health():
-    return {"status": "ok", "ollama": "offline", "db": "offline"}
+    ollama_status = "offline"
+    db_status = "offline"
+    
+    # Check Ollama
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            resp = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
+            if resp.status_code == 200:
+                ollama_status = "online"
+    except Exception:
+        pass
+
+    # Check DB
+    try:
+        engine = create_async_engine(settings.DATABASE_URL)
+        async with engine.connect() as conn:
+            await conn.execute("SELECT 1")
+            db_status = "online"
+        await engine.dispose()
+    except Exception:
+        pass
+
+    return {
+        "status": "ok",
+        "ollama": ollama_status,
+        "db": db_status
+    }
+
+@app.get("/api/v1/health/ollama")
+async def health_ollama():
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            resp = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
+            if resp.status_code == 200:
+                return {"status": "online", "models": resp.json().get("models", [])}
+    except Exception as e:
+        return {"status": "offline", "error": str(e)}
+    return {"status": "offline"}
 
 @app.get("/api/v1/companies")
 async def list_companies(
