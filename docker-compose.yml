@@ -1,0 +1,30 @@
+# docker-compose.yml — 100% free services
+version: '3.9'
+services:
+  postgres:
+    image: ankane/pgvector
+    environment:
+      POSTGRES_DB: biscraper
+      POSTGRES_USER: biscraper
+      POSTGRES_PASSWORD: biscraper123
+    ports: [ "5432:5432" ]
+    volumes: [ pgdata:/var/lib/postgresql/data ]
+
+  redis:
+    image: redis:alpine
+    ports: [ "6379:6379" ]
+
+  ollama:
+    image: ollama/ollama
+    ports: [ "11434:11434" ]
+    volumes: [ ollama_data:/root/.ollama ]
+    # For GPU (optional): 
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: [gpu]
+
+volumes:
+  pgdata:
+  ollama_data:

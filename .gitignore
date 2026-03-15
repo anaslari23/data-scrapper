@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.env
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/node_modules/
+.eslintcache
+
+# System
+.DS_Store
+Thumbs.db
+
+# Project
+*.log
+api.log
+frontend.log
+/tmp/
+data/
+docker/data/
